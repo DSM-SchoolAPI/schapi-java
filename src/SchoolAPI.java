@@ -1,17 +1,15 @@
 import datastructure.Meal;
+import parser.MealParser;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.ArrayList;
 
 public class SchoolAPI {
-    private static final String URL_FORMAT = "http://%s/sts_sci_md00_001.do?schulCode=%s&schulCrseScCode=%d&schulKndScScore=0%d&schYm=%d%02d";
+    private static String URL_FORMAT = "https://%s/sts_sci_md00_001.do?schulCode=%s&schulCrseScCode=%d&schulKndScScore=0%d&schYm=%d%02d";
 
     enum Region {
         SEOUL("stu.sen.go.kr"),
@@ -63,35 +61,36 @@ public class SchoolAPI {
     }
 
     private String getFormattedURL(int year, int month) {
-        return URL_FORMAT.format(this.region.value, this.schoolCode, this.type.value, this.type.value, year, month);
+        return String.format(URL_FORMAT, this.region.value, this.schoolCode, this.type.value, this.type.value, year, month);
     }
 
-    private static String getResponseDataFromConnection(HttpURLConnection conn) throws IOException {
-        InputStream is = conn.getInputStream();
-        BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+    private static String getResponseDataFromConnection(URL url) throws IOException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
 
-        String line;
-        StringBuilder response = new StringBuilder();
+        StringBuilder buffer = new StringBuilder();
+        String inputLine;
 
-        while ((line = rd.readLine()) != null) {
-            response.append(line);
-            response.append('\r');
+        boolean reading = false;
+
+        while ((inputLine = reader.readLine()) != null) {
+            if (reading) {
+                if (inputLine.contains("</tbody>"))
+                    break;
+                buffer.append(inputLine);
+            } else {
+                if (inputLine.contains("<tbody>"))
+                    reading = true;
+            }
         }
 
-        rd.close();
+        reader.close();
 
-        return response.toString();
+        return buffer.toString();
     }
 
-    public ArrayList<Meal> getMonthlyMenus(int year, int month) throws MalformedURLException, IOException {
-        ArrayList<Meal> meals = new ArrayList<>();
-
+    public ArrayList<Meal> getMonthlyMenus(int year, int month) throws IOException {
         URL url = new URL(getFormattedURL(year, month));
 
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-
-        String responseData = getResponseDataFromConnection(conn);
-
-
+        return MealParser.parse(getResponseDataFromConnection(url));
     }
 }
