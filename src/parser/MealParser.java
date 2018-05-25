@@ -12,7 +12,7 @@ public class MealParser {
             return new ArrayList<Meal>();
 
         ArrayList<Meal> monthlyMenu = new ArrayList<>();
-
+        monthlyMenu.add(new Meal());
 
         rawData = rawData.replaceAll("\\s+", "");
 
