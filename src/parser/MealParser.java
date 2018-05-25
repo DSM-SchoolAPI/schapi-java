@@ -63,8 +63,8 @@ public class MealParser {
                 continue;
             } else if (chunk.equals("[중식]")) {
                 parsingMode = 1;
-
                 meal.lunch = new ArrayList<>();
+
                 continue;
             } else if (chunk.equals("[석식]")) {
                 parsingMode = 2;
